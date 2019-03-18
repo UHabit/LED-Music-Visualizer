@@ -15,7 +15,7 @@
 #define LED_TYPE    WS2812B // LED chipset
 #define COLOR_ORDER RGB     
 #define HUE_SPEED   10      // Rainbow wave speed
-#define HUE_SPREAD  3       // Compression of rainbow
+#define HUE_SPREAD  3     // Compression of rainbow
 
 CRGB strip[NUM_LEDS];       // LED Strip array
 
@@ -32,22 +32,13 @@ int Frequencies_One[7];
 int Frequencies_Two[7]; 
 int band;
 int audio_input = 0;
-
-int wheel = 0;
+long react = 0;             // NUMBER OF LEDs BEING LIT
+long pre_react = 0;
+long pos_react = 0;
 
 // STANDARD VARIABLES
-int split = 3;
-int section = NUM_LEDS / split;
-int hue;
+int hue = 0;
 int led;
-
-int decay = 0; // HOW MANY MS BEFORE ONE LIGHT DECAY
-int decay_check = 0;
-long pre_react = 0; // NEW SPIKE CONVERSION
-long react = 0; // NUMBER OF LEDs BEING LIT
-long post_react = 0; // OLD SPIKE CONVERSION
-
-
 
 // CONFIG END **********************************************************************************************
 
@@ -79,57 +70,77 @@ void setup() {
 }
 
 void loop() {
-  
-  singleVisualizer();
-  
+  readMSGEQ7();
+  audio();
+  rainbowWave();
 }
 
 // CUSTOM METHODS ******************************************************************************************
 
-void readMSGEQ7()
 // Function to read 7 band equalizers
+void readMSGEQ7()
 {
   digitalWrite(RESET, HIGH);
   digitalWrite(RESET, LOW);
   for(band = 0; band < 7; band++)
   {
     digitalWrite(STROBE, LOW); // strobe pin on the shield - kicks the IC up to the next band 
-    delayMicroseconds(30); 
     Frequencies_One[band] = analogRead(DC_One); // store left band reading
     Frequencies_Two[band] = analogRead(DC_Two); // ... and the right
     digitalWrite(STROBE, HIGH); 
   }
 }
 
-void setReact()
+void audio()
 {
-  
+  if (Frequencies_One[BASS] > Frequencies_Two[BASS]){
+    audio_input = Frequencies_One[BASS];
+  } else {
+    audio_input = Frequencies_Two[BASS];
+  }
+
+  pre_react = ((long)NUM_LEDS * (long)audio_input) / 1023L; // TRANSLATE AUDIO LEVEL TO NUMBER OF LEDs
+
+  if (pre_react < 50) {
+    pre_react = 0;
+  }
+
+  Serial.println(pre_react);
 }
 
 void rainbowWave()
 {
-  for (int hue = 256; hue > 0 ; hue--) {
+  hueDelta();
 
-    react--;
-
-    if (react <= 0) {
-      react = 300;
+  // This flips the animation and adds decay onto 
+  if (pre_react > pos_react) {
+    pos_react = pre_react;
+    react = NUM_LEDS - pre_react;
+  } else {
+    pos_react--;
+    react++;
+    if (react >= NUM_LEDS) {
+      react = NUM_LEDS;
     }
-    
-    for (led = 0; led < NUM_LEDS; led++) {
-      if (led < react) {
-        strip[led].setHue((hue * HUE_SPEED) + (led * HUE_SPREAD));
-      }else{
-        strip[led].setRGB( 0, 0, 0);
-      }
+    if (pos_react <= 0) {
+      pos_react = 0;
     }
-    
-    FastLED.show();
   }
+  
+  for (led = 0; led < NUM_LEDS; led++) {
+    if (led > react) {
+      strip[led].setHue((hue * HUE_SPEED) + (led * HUE_SPREAD));
+    } else {
+      strip[led].setRGB( 0, 0, 0);
+    }
+  }
+  FastLED.show();
 }
 
-void singleVisualizer()
+void hueDelta()
 {
-  readMSGEQ7();
-  rainbowWave();
+  hue ++;
+  if (hue == 256) {
+    hue = 0;
+  }
 }
