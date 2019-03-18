@@ -3,6 +3,20 @@
 // Arduino Uno + Spectrum Shield
 // LED Music Visualizer v0.1 
 
+// Designed and Developed by Aaron Soler
+// Resources used
+// FastLED https://github.com/FastLED/FastLED/wiki/Overview
+// Sparkfun Spectrum Shield https://learn.sparkfun.com/tutorials/spectrum-shield-hookup-guide/all
+
+// This guys code didn't work for my 2 300 LED strips so I used some of his functions and tweaked them
+// I made a few of my own functions but this guys code did help me understand what was going on with the LEDS
+// This was the first time I ever coded in C or C++
+// Thanks to this guy I was inspired to create something like his but on a bigger scale
+// https://youtu.be/Af74A0Tx-wA
+// https://github.com/the-red-team/Arduino-FastLED-Music-Visualizer
+
+
+
 // Adjust config to suit your needs
 
 // CONFIG START ********************************************************************************************
